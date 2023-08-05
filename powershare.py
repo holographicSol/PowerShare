@@ -1,3 +1,5 @@
+""" Written by Benjamin Jack Cullen """
+
 import os.path
 import sys
 import subprocess
