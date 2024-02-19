@@ -16,6 +16,19 @@ tray_icon = []
 
 _program_name = 'PowerShare'
 
+def setExecutionPolicyUnrestricted():
+    cmd = 'powershell Set-ExecutionPolicy Unrestricted'
+    xcmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    while True:
+        output = xcmd.stdout.readline()
+        if output == '' and xcmd.poll() is not None:
+            break
+        if output:
+            output = output.decode("utf-8").strip()
+            print(output)
+        else:
+            break
+
 
 class SystemTrayIcon(QtWidgets.QSystemTrayIcon):
 
@@ -47,6 +60,8 @@ class SystemTrayIcon(QtWidgets.QSystemTrayIcon):
         menu.addSeparator()
         on_action = menu.addAction(QtGui.QIcon("./img_user.ico"), "Enable Share All (Network share every disk)")
         menu.addSeparator()
+        don_action = menu.addAction(QtGui.QIcon("./img_admin.ico"), "Enable Default Shares")
+        menu.addSeparator()
         off_action = menu.addAction(QtGui.QIcon("./img_admin.ico"), "Disable Share All (Disable network share every disk)")
         menu.addSeparator()
         isolate_action = menu.addAction(QtGui.QIcon("./img_isolate.ico"),
@@ -62,6 +77,7 @@ class SystemTrayIcon(QtWidgets.QSystemTrayIcon):
         on_action.triggered.connect(self.net_share_express_0)
         off_action.triggered.connect(self.net_share_express_1)
         isolate_action.triggered.connect(self.net_share_express_2)
+        don_action.triggered.connect(self.net_share_express_3)
 
         # monitor interval
         self.timer_0 = QTimer(self)
@@ -80,6 +96,9 @@ class SystemTrayIcon(QtWidgets.QSystemTrayIcon):
 
     def net_share_express_2(self):
         self.net_share_express(_command=int(2))
+
+    def net_share_express_3(self):
+        self.net_share_express(_command=int(3))
 
     @QtCore.pyqtSlot()
     def net_share_express(self, _command: int):
@@ -122,6 +141,28 @@ class SystemTrayIcon(QtWidgets.QSystemTrayIcon):
                     break
 
                 output_idx += 1
+
+        elif _command == int(3):
+            xcmd = subprocess.Popen('powershell Set-ItemProperty -Name AutoShareWks -Path HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters -Value 1', shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            while True:
+                output = xcmd.stdout.readline()
+                if output == '' and xcmd.poll() is not None:
+                    break
+                if output:
+                    output = output.decode("utf-8").strip()
+                    print(output)
+                else:
+                    break
+            xcmd = subprocess.Popen('powershell ./default_admin_shares.ps1', shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            while True:
+                output = xcmd.stdout.readline()
+                if output == '' and xcmd.poll() is not None:
+                    break
+                if output:
+                    output = output.decode("utf-8").strip()
+                    print(output)
+                else:
+                    break
 
     @QtCore.pyqtSlot()
     def timer_0_start_function(self):
@@ -188,6 +229,9 @@ class SystemTrayIcon(QtWidgets.QSystemTrayIcon):
 
 def main(image):
     global tray_icon
+
+    setExecutionPolicyUnrestricted()
+
     app = QtWidgets.QApplication(sys.argv)
     w = QtWidgets.QWidget()
     tray_icon = SystemTrayIcon(QtGui.QIcon(image), w)
